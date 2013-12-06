@@ -33,7 +33,7 @@ if(isset($_POST) && !empty($_POST)){
 	$posts = array();
 	$order = '';
 	$offset = 0;
-	$size_results = 20;	
+	$size_results = 1000;	
 	
 
 	//Receiving data from AJAX request
@@ -114,7 +114,7 @@ if(isset($_POST) && !empty($_POST)){
 
 	//Match listing or event
 	$match[] = "@type ".$post_type;
-	
+	/*
 	if($zipcode!='') {
 		$match[] = "@zip ".$zipcode;
 	}
@@ -122,7 +122,7 @@ if(isset($_POST) && !empty($_POST)){
 	if($neighborhood!='') {
 		$match[] = "@nbhd ".$neighborhood;
 	}
-
+	*/
 	if($city!='') {
 		$match[] = "@city ".$city;
 	}
@@ -153,6 +153,7 @@ if(isset($_POST) && !empty($_POST)){
 	if( $results->rowCount() > 0 ){
 		foreach($results as $r){
 			$posts[] = $r['id'];
+			$distances[] = array($r['id'],$r['distance']);
 		}
 
 		$docs['posts'] = $posts;
@@ -164,6 +165,8 @@ if(isset($_POST) && !empty($_POST)){
 				break;
 			}
 		}	
+
+		$docs['distances'] = $distances;
 		
 		echo json_encode($docs);
 	} else{

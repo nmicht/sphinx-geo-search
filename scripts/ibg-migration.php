@@ -10,12 +10,12 @@
  */
 
  
-
+/*
 require_once( '../../../wp-load.php' );
 wp();
 header('HTTP/1.1 200 OK');
 switch_to_blog(2);
-
+*/
 
 $debug_log = FALSE;
 
@@ -73,14 +73,14 @@ function ibg_save_geolocation( $postID , $logging = FALSE){
 		writeDebug(PHP_EOL.'The post meta: '.PHP_EOL.print_r($meta,true));
 	
 	//Verify there is an address
-	if(empty($meta['_listing_street'][0]) || empty($meta['_listing_city'][0]) || empty($meta['_listing_state'][0]) || empty($meta['_listing_zip'][0])){
+	if(empty($meta['_'.$post_type.'_street'][0]) || empty($meta['_'.$post_type.'_city'][0]) || empty($meta['_'.$post_type.'_state'][0]) || empty($meta['_'.$post_type.'_zip'][0])){
 		if($debug_log)
 			writeDebug(PHP_EOL.'IBG-MIG: The post '.$postID.' do not have address info');
 		error_log('IBG-MIG: The post '.$postID.' do not have address info');
 		return false;
 	}
 
-	$address = $meta['_listing_street'][0] . ',' . $meta['_listing_city'][0] . ',' . $meta['_listing_state'][0];
+	$address = $meta['_'.$post_type.'_street'][0] . ',' . $meta['_'.$post_type.'_city'][0] . ',' . $meta['_'.$post_type.'_state'][0];
 	
 	//Get geo location
 	$location = ibg_get_latlng($address);
@@ -93,56 +93,56 @@ function ibg_save_geolocation( $postID , $logging = FALSE){
 	
 	//Setting city
 	if($debug_log)
-		writeDebug(PHP_EOL.'Old city string: '.$meta['_listing_city'][0]);
+		writeDebug(PHP_EOL.'Old city string: '.$meta['_'.$post_type.'_city'][0]);
 	if( !isset($location['city']) ){
 		//Removing commas from post metadata
-		if( strpos($meta['_listing_city'][0],',') !== FALSE ){
-			$meta['_listing_city'][0] = str_replace(',', '', trim($meta['_listing_city'][0]));
+		if( strpos($meta['_'.$post_type.'_city'][0],',') !== FALSE ){
+			$meta['_'.$post_type.'_city'][0] = str_replace(',', '', trim($meta['_'.$post_type.'_city'][0]));
 			if($debug_log)
 				writeDebug(PHP_EOL.'Updated city to remove commas in post '.$postID);
 		}
-		$location['city'] =  $meta['_listing_city'][0];
+		$location['city'] =  $meta['_'.$post_type.'_city'][0];
 		if($debug_log)
 			writeDebug(PHP_EOL.'IBG-MIG: Unable to get city for post '.$postID.'. Using the city from metadata: '.$location['city']);
 	}
-	update_post_meta($postID, '_listing_city', $location['city']);
+	update_post_meta($postID, '_'.$post_type.'_city', $location['city']);
 	if($debug_log)
 		writeDebug(PHP_EOL.'New city string: '.$location['city']);
 
 	//Generate the iframe url
 	$iframe_url = ibg_get_iframe_url($address, $location['lat'], $location['lng']);
-	update_post_meta($postID, '_listing_iframe_url', $iframe_url);
+	update_post_meta($postID, '_'.$post_type.'_iframe_url', $iframe_url);
 	if($debug_log)
 		writeDebug(PHP_EOL.'Iframe url generated '.$iframe_url);
 
 
 	if($debug_log)
-		writeDebug(PHP_EOL.'Old neighborhood string: '.$meta['_listing_neighborhood'][0]);
+		writeDebug(PHP_EOL.'Old neighborhood string: '.$meta['_'.$post_type.'_neighborhood'][0]);
 	
 	//Update neighborhood
 
 	//Cleaning whitespaces
-	$meta['_listing_neighborhood'][0] = trim($meta['_listing_neighborhood'][0]);
+	$meta['_'.$post_type.'_neighborhood'][0] = trim($meta['_'.$post_type.'_neighborhood'][0]);
 	
 	//Removing "All"
-	if( $meta['_listing_neighborhood'][0] == 'All' ){
-		$meta['_listing_neighborhood'][0] = '';
+	if( $meta['_'.$post_type.'_neighborhood'][0] == 'All' ){
+		$meta['_'.$post_type.'_neighborhood'][0] = '';
 		if($debug_log)
 			writeDebug(PHP_EOL.'Cleaning neigborhood to remove "All" in post '.$postID);
 	}
 	
 	//Adding new neighborhood from google
-	if( isset($location['neighborhood']) && stripos($meta['_listing_neighborhood'][0] , $location['neighborhood']) === FALSE ){
-		if( !empty($meta['_listing_neighborhood'][0]) )
-			$meta['_listing_neighborhood'][0] .= ', ';
-		$location['neighborhood'] = $meta['_listing_neighborhood'][0].$location['neighborhood'];
+	if( isset($location['neighborhood']) && stripos($meta['_'.$post_type.'_neighborhood'][0] , $location['neighborhood']) === FALSE ){
+		if( !empty($meta['_'.$post_type.'_neighborhood'][0]) )
+			$meta['_'.$post_type.'_neighborhood'][0] .= ', ';
+		$location['neighborhood'] = $meta['_'.$post_type.'_neighborhood'][0].$location['neighborhood'];
 		
 	}
 	else{
-		$location['neighborhood'] = $meta['_listing_neighborhood'][0];
+		$location['neighborhood'] = $meta['_'.$post_type.'_neighborhood'][0];
 	}
 		
-	update_post_meta($postID, '_listing_neighborhood', $location['neighborhood']);
+	update_post_meta($postID, '_'.$post_type.'_neighborhood', $location['neighborhood']);
 
 	if($debug_log)
 		writeDebug(PHP_EOL.'New neighborhood string: '.$location['neighborhood']);
@@ -176,7 +176,7 @@ function ibg_save_geolocation( $postID , $logging = FALSE){
 					\"{$post_type}\",
 					{$location['lat']},
 					{$location['lng']},
-					{$meta['_listing_zip'][0]},
+					{$meta['_'.$post_type.'_zip'][0]},
 					\"".addslashes($location['neighborhood'])."\",
 					\"".addslashes($location['city'])."\"
 				)";
@@ -186,7 +186,7 @@ function ibg_save_geolocation( $postID , $logging = FALSE){
 						VALUES (
 						$postID,
 						'$post_type',
-						'{$meta['_listing_zip'][0]}',
+						'{$meta['_'.$post_type.'_zip'][0]}',
 						'".addslashes($location['neighborhood'])."',
 						'".addslashes($location['city'])."',					
 						".deg2rad($location['lat']).",
@@ -196,9 +196,9 @@ function ibg_save_geolocation( $postID , $logging = FALSE){
 	else {
 		$query_mysql = "UPDATE geo_posts
 				SET lat = {$location['lat']}, 
-				type = \"$post_type\",
+				post_type = \"$post_type\",
 				lng = {$location['lng']},
-				zip = {$meta['_listing_zip'][0]},
+				zip = {$meta['_'.$post_type.'_zip'][0]},
 				nbhd = \"".addslashes($location['neighborhood'])."\",
 				city = \"".addslashes($location['city'])."\"
 				WHERE post_id= $postID";
@@ -208,7 +208,7 @@ function ibg_save_geolocation( $postID , $logging = FALSE){
 						VALUES (
 						$postID,
 						'$post_type',
-						'{$meta['_listing_zip'][0]}',
+						'{$meta['_'.$post_type.'_zip'][0]}',
 						'".addslashes($location['neighborhood'])."',
 						'".addslashes($location['city'])."',					
 						".deg2rad($location['lat']).",
@@ -235,4 +235,4 @@ function ibg_save_geolocation( $postID , $logging = FALSE){
 }
 
 
-ibg_save_geolocation((int)$_GET['id'],true);
+//ibg_save_geolocation((int)$_GET['id'],true);
